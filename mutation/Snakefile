@@ -1,0 +1,352 @@
+from snakemake.remote.HTTP import RemoteProvider as HTTPRemoteProvider
+HTTP = HTTPRemoteProvider()
+
+configfile: "config.yaml"
+
+# Global
+version                  = config["version"]
+source_dir               = os.path.join(config["base_dir"], config["source_dir"])
+output_dir               = os.path.join(config["base_dir"], config["output_dir"])
+genes                    = config["genes"]
+categs                   = ["alt", "ref"]   # ["alt", "ref", "both"]
+### Step 1. Download DepMap files
+basename_file            = "CCLE_mutations_DepMap_22Q2"
+depmap_mutations_file    = "CCLE_mutations_DepMap_22Q2.csv"
+depmap_src               = "https://ndownloader.figshare.com/files/34989940"
+depmap_file              = os.path.join(source_dir, f"{basename_file}.tsv")
+depmap_headers_file      = os.path.join(source_dir, f"{basename_file}_header.csv")
+### step 2. DepMap filtered
+depmap_filtered_file     = os.path.join(output_dir, f"{basename_file}_filtered.tsv")
+### step 3. Split DepMap files by gene  as VCF format
+vcf_by_gene_dir          = os.path.join(output_dir, "by-gene")
+### step 4. get mutation flanking kmers in vcf2seq results
+vcf2seq_dir              = os.path.join(output_dir, "vcf2seq")
+vcf2seq_exonic_dir       = os.path.join(output_dir, "vcf2seq-exonic")
+### fa2kmer_31 expand 61 mers to 31 mers
+fa2seq_dir            = os.path.join(output_dir, "fa2seq")
+# step find-exonic 1. Download Annotation (used to find kmers overlapping on intron)
+annot_file               = f"gencode.v{config['annot']['release']}lift37.annotation.gff3.gz" if config['annot']['version'] == "GRCh37" else  f"gencode.v{config['annot']['release']}.annotation.gff3.gz"
+annot_url                = os.path.join(f"https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_{config['annot']['release']}/{config['annot']['version']}_mapping", annot_file) if config['annot']['release'] == "GRCh37" else os.path.join(f"https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_{config['annot']['release']}/{config['annot']['version']}_mapping", annot_file)
+# step find-exonic 2. Annotate exon (used to find kmers overlapping on intron)
+annot_src                = os.path.join(source_dir, annot_file)
+# ~ annot_exon               = f"{'.'.join(annot_src.split('.')[:-2])}.exon.gff3"
+# step find-exonic 3. BED files (used to find kmers overlapping on intron)
+# ~ bed_ref_dir              = os.path.join(output_dir, "bed1_ref")
+# ~ bed_exonic_dir           = os.path.join(output_dir, "bed2_exonics")
+# ~ bed_lost_dir             = os.path.join(output_dir, "bed3_lost")
+# ~ # step find-exonic 4. find exon/intron kmers
+# ~ vcf2seq_lost_dir            = os.path.join(output_dir, "vcf2seq-results-lost")
+# step 5. kmerator on seqtailor kmers
+kmerator_dir             = os.path.join(output_dir, "kmerator")
+# step 6. complexity filter
+complexity_dir           = os.path.join(output_dir, "complexity")
+# step 7. Reindeer results
+rdeer_dir                = os.path.join(output_dir, "reindeer")
+# step 8. Merge kmers by mutation
+merge_kmer_dir           = os.path.join(output_dir, f"merge_kmer-minpos{config['merge_kmer']['min_pos']}")
+# step 9. Filter merged kmers by reccurency and noise
+subdir = f"a{config['filter']['abund-min']}-r{config['filter']['recur-max']}-minpos{config['merge_kmer']['min_pos']}"
+filter_kmer_dir          = os.path.join(output_dir, subdir, "filter_kmer")
+
+# step 10. compute comparative VAFs between DepMap and Reindeer
+vaf_dir                  = os.path.join(output_dir, subdir, "vaf")
+vaf_report               = os.path.join(output_dir, subdir, "vaf-report.md")
+
+# extracts False+ and True+
+vaf_extracts_dir         = os.path.join(output_dir, subdir, "vaf-extracts")
+false_pos                = os.path.join(vaf_extracts_dir, "false-pos.tsv"),
+true_pos                 = os.path.join(vaf_extracts_dir, "true-pos.tsv"),
+
+# step 9. Table tsv file
+table_file               =  os.path.join(output_dir, subdir, "table.tsv")
+
+# step 10. Plots
+plots_dir                =  os.path.join(output_dir, subdir, "plots")
+sensiblt_plot            = os.path.join(plots_dir, f"plot-sensibility-{version}.png")
+specifct_plot            = os.path.join(plots_dir, f"plot-specificity-{version}.png")
+stackbar_plot            = os.path.join(plots_dir, f"plot-stackbar-percent-{version}.png")
+
+# report file
+report_file              = os.path.join(output_dir, subdir, "report.tsv")
+
+
+rule all:
+    input:
+        ### dnld_depmap
+        # ~ depmap_file,
+        ### dnld_annot
+        # ~ annot_src,
+        ### depmap_csv_to_tsv
+        # ~ depmap_filtered_file,
+        ### vcf_by_genes
+        # ~ expand(vcf_by_gene_dir + "/" + basename_file + "_{gene}.vcf", gene=genes),
+        ### vcf2seq
+        # ~ expand(vcf2seq_dir + "/{categ}/" + basename_file + "_{gene}.fa", gene=genes, categ=categs),
+        ### fa2kmer_31
+        # ~ expand(fa2seq_dir + "/{categ}/" + basename_file + "_{gene}.fa", gene=genes, categ=categs),
+        ### kmerator --- kmerator on vcf2seq results
+        # ~ expand(os.path.join(kmerator_dir, "{categ}", basename_file) + "_{gene}.fa", gene=genes, categ=categs),
+        ### reindeer --- Reindeer against CCLE_1019 index
+        # ~ expand(os.path.join(rdeer_dir, "{categ}", basename_file) + "_{gene}.tsv", gene=genes, categ=categs),
+        ### merge_kmer --- Merge kmers by mutations
+        # ~ expand(os.path.join(merge_kmer_dir, "{categ}", basename_file) + "_{gene}.tsv", gene=genes, categ=categs),
+        ###### Try to fishing out null counts #####
+        ### split_null_counts --- split Reindeer ALT output into positives and null counts separated files
+        # ~ expand(os.path.join(rdeer_null_counts_dir, basename_file) + "_{gene}.tsv", gene=genes),
+        # ~ expand(os.path.join(rdeer_pos_counts_dir, basename_file) + "_{gene}.tsv", gene=genes),
+        ### rescue_null_counts
+        # ~ expand(os.path.join(rescued_null_counts_dir, basename_file) + "_{gene}.tsv", gene=genes),
+        ### merge_reindeer --- Merge rescued and positives rdeer counts
+        # ~ expand(os.path.join(rdeer_merged_counts_dir, basename_file) + "_{gene}.tsv", gene=genes),
+        ### Compute VAF
+        # ~ expand(os.path.join(vaf_dir, basename_file) + "_{gene}.tsv", gene=genes),
+        vaf_report,
+        # vaf extracts
+        os.path.join(vaf_extracts_dir, "false-pos.tsv"),
+        os.path.join(vaf_extracts_dir, "true-pos.tsv"),
+        ### Make the final table
+        # ~ table_file,
+        ### Make the plots
+        sensiblt_plot,
+        specifct_plot,
+        stackbar_plot,
+
+    # ~ output: report_file
+    shell:
+        "echo -e source files are in '{source_dir}' ; "
+        "echo -e source files are in '{output_dir}' ; "
+        # ~ "touch {output}"
+
+
+rule dnld_depmap:
+    ### Download
+    output:
+        csv = depmap_file,
+        heads = depmap_headers_file
+    shell:
+        "wget {depmap_src} -O {output.csv} ;"
+        "paste <(seq 32 | tr ' ' '\\n') <(head -1 {output.csv} "
+        "| tr ',' '\\n') <(head -2 {output.csv} | tail -1 "
+        "| tr ',' '\\n') > {output.heads}"
+
+
+rule dnld_annot:
+    ### Download annotation files
+    input:
+        HTTP.remote(annot_url)
+    output:
+        annot_src
+    shell:
+        "wget {annot_url} -O {output}"
+
+
+rule depmap_csv_to_tsv:
+    ### From DepMap file, Extract columns of interest as a VCF file for seqtailor.
+    ### Then, a python script reduce the file to keep only the 1019 RNAseq cell lines
+    ###     and add column 'SRR' with the SRR names
+    input:
+        depmap_file
+    output:
+        depmap_filtered_file
+    params:
+        filter = config["depmap"]["filter_af"] or "",
+        isCOSMIChotspot = '--is-cosmic-hotspot' if config["depmap"]["isCOSMIChotspot"] else "",
+    shell:
+        "awk -v OFS='\\t' -F',' '{params.filter} {{ if ($9 == \"INS\") "
+        "{{print $4, $6, $6\":\"$17, $10, $11, $6, $7, $1, $16, $8, $9, $14, $15, $17, $18, $19, $20, $21, $23, $26, $30, $8}} "
+        " else {{print $4, $5, $5\":\"$17, $10, $11, $6, $7, $1, $16, $8, $9, $14, $15, $17, $18, $19, $20, $21, $23, $26, $30, $8}}  "
+        "}}' {input}"
+        " > .~depmap_filtered_temp"
+        " ; "
+        "bin/clean_depmap_vcf.py {params.isCOSMIChotspot} .~depmap_filtered_temp -o {output}"
+        " ; "
+        "rm .~depmap_filtered_temp"
+
+
+rule vcf_by_genes:
+    ### split depmap filtered tsv file by selected genes
+    input:
+        depmap_filtered_file
+    output:
+        vcf_by_gene_dir + "/" + basename_file + "_{gene}.vcf"
+    shell:
+        "awk -v GENE={wildcards.gene} -F'\\t' '$8 == GENE {{print}}' {depmap_filtered_file} "
+        " > {output}"
+
+
+rule vcf2seq_61:
+    ### to query with Reindeer, we must have sequences instead of mutation positionss
+    input:
+        vcf_by_gene_dir + "/" + basename_file + "_{gene}.vcf"
+    output:
+        vcf2seq_dir +  "/{categ}/" + basename_file + "_{gene}.fa"
+    params:
+        genome = os.path.join(config['base_dir'], config['genome']),
+        depmap = depmap_filtered_file,
+        kmer_size = "61",
+    shell:
+        "vcf2seq -t {wildcards.categ} -s {params.kmer_size} -g {params.genome} {input} -o {output} ; "
+        ### Add SSR and vaf
+        "bin/addSRR2header.py -d {depmap_filtered_file} {output}"
+
+
+rule kmerator:
+    ### keep only specific kmers resulting of seqtailor
+    input:
+        os.path.join(vcf2seq_dir, "{categ}", basename_file) + "_{gene}.fa"
+    output:
+        os.path.join(kmerator_dir, "{categ}", basename_file) + "_{gene}.fa",
+    params:
+        thread = config['thread'],
+        kmtr_dir = os.path.join(kmerator_dir, "{categ}", "kmtr-{gene}"),
+        kmtr_base_dir = "kmtr-{gene}",
+        jellyfish = config['kmerator']['jellyfish'],
+        option = lambda wildcards: "--chimera" if wildcards.categ == "alt" else "--max-on-transcriptome 100",
+        release = config['kmerator']['release'],
+    shell:
+        "kmerator -t 4 -f {input} -r {params.release} -o {params.kmtr_dir} -g {params.jellyfish} {params.option} ; "
+        "if [ -f {params.kmtr_dir}/kmers.fa ] ; "
+        "then ln -fs {params.kmtr_base_dir}/kmers.fa {output} ; "
+        # ~ "then sed '/^>/s/.kmer.*//' {params.kmtr_dir}/kmers.fa > {output} ; "
+        "else touch {output} ; "
+        "fi ; "
+        # ~ "rm -Rf {params.kmtr_dir}"
+
+rule complexity:
+    input:
+        os.path.join(kmerator_dir, "{categ}", basename_file) + "_{gene}.fa"
+    output:
+        os.path.join(complexity_dir, "{categ}", basename_file) + "_{gene}.fa"
+    params:
+        complex_tab = os.path.join(complexity_dir, "{categ}", basename_file) + "_{gene}-complex-tab.tsv",
+        complex_fa = os.path.join(complexity_dir, "{categ}", basename_file) + "_{gene}-complex.fa"
+    shell:
+        """
+        if [ -s {input} ] ; then
+         Rscript bin/complexity.R {input} {params.complex_tab} {params.complex_fa} ;
+         else touch {params.complex_fa} {params.complex_tab};
+        fi ;
+
+        if [ ! $(awk 'BEGIN{{RS=">"}}{{print $1"\\t"$2;}}' {params.complex_fa} | sed '1d' |  grep -v '\-.*AAAAAA\|\-.*TTTTTT\|\-.*GGGGGG\|\-.*CCCCCC' | awk -F'\\t' -v OFS='\\n' '{{$1 = ">" $1}} 1' | wc -l ) -eq 0 ] ; then
+         awk 'BEGIN{{RS=">"}}{{print $1"\\t"$2;}}' {params.complex_fa} | sed '1d' |
+         grep -v '\-.*AAAAAA\|\-.*TTTTTT\|\-.*GGGGGG\|\-.*CCCCCC' | awk -F'\\t' -v OFS='\\n' '{{$1 = ">" $1}} 1' > {output} ;
+         else touch {output} ;
+         fi ;
+        """
+
+
+reindeer_source_dir = complexity_dir if config['complexity']['enabled'] else kmerator_dir
+rule reindeer:
+    ### Launch Reindeer on exonic seqtailor exonic results
+    input:
+        os.path.join(reindeer_source_dir, "{categ}", basename_file) + "_{gene}.fa",
+    output:
+        os.path.join(rdeer_dir, "{categ}", basename_file) + "_{gene}.tsv",
+    params:
+        index = config["reindeer"]["index"],
+        server = config["reindeer"]["server"],
+        options = config['reindeer']['options'] or "",
+    shell:
+        "if [ -s {input} ] ; then"
+        " rdeer-client query -s {params.server} {params.options} -q {input} {params.index} -o {output} ; "
+        "else touch {output} ; fi"
+
+
+rule merge_kmer:
+    input:
+        os.path.join(rdeer_dir, "{categ}", basename_file) + "_{gene}.tsv",
+    output:
+        os.path.join(merge_kmer_dir, "{categ}", basename_file) + "_{gene}.tsv",
+    params:
+        min_pos = config['merge_kmer']['min_pos'] or 1,
+    shell:
+        "bin/merge-kmer.py --min-pos {params.min_pos} {input} -o {output}"
+
+
+rule filter:        # get out recurrency and noise
+    input:
+        os.path.join(merge_kmer_dir, "alt", basename_file) + "_{gene}.tsv",
+    output:
+        os.path.join(filter_kmer_dir, "alt", basename_file) + "_{gene}.tsv",
+    params:
+        recur_max = config['filter']['recur-max'],
+        abund_min = config['filter']['abund-min'],
+    shell:
+        "bin/filter.py {input} --recur-max {params.recur_max} --abund-min {params.abund_min} -o {output}"
+
+
+alt_kmer_dir = filter_kmer_dir if config['filter']['enabled'] else merge_kmer_dir
+rule mk_table:
+    ### Make table tsv file
+    input:
+        # ~ expand(os.path.join(merge_kmer_dir, "ref", basename_file) + "_{gene}.tsv", gene=genes),
+        expand(os.path.join(alt_kmer_dir, "alt", basename_file) + "_{gene}.tsv", gene=genes),
+        # ~ reindeer_ref = expand(os.path.join(rdeer_dir, "ref", basename_file) + "_{gene}.tsv", gene=genes, categ=categs),
+        # ~ reindeer_alt = expand(os.path.join(rdeer_dir, "alt", basename_file) + "_{gene}.tsv", gene=genes, categ=categs),
+        # ~ rdeer = expand(os.path.join(rdeer_merged_counts_dir, basename_file) + "_{gene}.tsv", gene=genes),
+        # ~ seqt_lost = expand(os.path.join(vcf2seq_lost_dir, basename_file) + "_{gene}.fa", gene=genes),
+        # ~ exonic = expand(os.path.join(vcf2seq_exonic_dir, "{categ}", basename_file) + "_{gene}.fa", gene=genes, categ=categs),
+    output:
+        table_file
+    params:
+        abun_min = config["filter"]["abund-min"] if config["filter"]["enabled"] else 1,
+        recur_max = config["filter"]["recur-max"] if config["filter"]["enabled"] else "100%",
+        min_pos = config["merge_kmer"]["min_pos"],
+        basedir = output_dir,
+    shell:
+        "bin/mk-table.py {params.basedir} -a {params.abun_min} -r {params.recur_max} -m {params.min_pos} -o {output}"
+
+
+rule vaf:
+        input:
+            ref = os.path.join(merge_kmer_dir, "ref", basename_file) + "_{gene}.tsv",
+            alt = os.path.join(alt_kmer_dir, "alt", basename_file) + "_{gene}.tsv",
+            depmap = os.path.join(vcf_by_gene_dir, basename_file) + "_{gene}.vcf",
+        output:
+            tsv = os.path.join(vaf_dir, basename_file) + "_{gene}.tsv",
+        shell:
+            "bin/vaf.py {input.ref} {input.alt} {input.depmap} > {output.tsv}"
+
+
+rule vaf_report:
+    input:
+        vaf_files = expand(os.path.join(vaf_dir, basename_file) + "_{gene}.tsv", gene = genes),
+    output:
+        vaf_report,
+    params:
+        plots_dir = plots_dir,
+        vaf_dir = vaf_dir,
+    shell:
+        "bin/vaf-report.py {params.vaf_dir} -o {output}"
+
+
+rule vaf_extracts:
+    input:
+        vaf_files = expand(os.path.join(vaf_dir, basename_file) + "_{gene}.tsv", gene = genes),
+    output:
+        false_pos = os.path.join(vaf_extracts_dir, "false-pos.tsv"),
+        true_pos = os.path.join(vaf_extracts_dir, "true-pos.tsv"),
+    params:
+        input_dir = vaf_dir,
+        output_dir = vaf_extracts_dir,
+    shell:
+        "bin/vaf-extracts.sh {params.input_dir} {params.output_dir}"
+
+
+rule mk_plots:
+    input:
+        table = table_file,
+        true_pos = true_pos,
+        false_pos = false_pos,
+    output:
+        sensiblt = sensiblt_plot,
+        specifct = specifct_plot,
+        stackbar = stackbar_plot,
+        plots_dir = directory(plots_dir),
+    params:
+        abun_min = config["filter"]["abund-min"],
+        recur_max = config["filter"]["recur-max"],
+        version = version,
+    shell:
+        "bin/plots-snake.py {input.table} -a {params.abun_min} -r {params.recur_max} -v {params.version} -o {plots_dir};"
+        "bin/plot-AF.py -t {input.true_pos} -f {input.false_pos} -o {output.plots_dir}"
