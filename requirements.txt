@@ -1,4 +1,9 @@
+kmerator
+snakemake
+rdeer-service
 PyYAML
+pyfaidx
+scipy
 pandas
 plotly
 seaborn

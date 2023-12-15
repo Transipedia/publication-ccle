@@ -1,13 +1,12 @@
-base_dir:   depmap-22Q2
-source_dir: input          # relative to base_dir
+base_dir:   results # depmap-22Q2
 
 thread: 12
 
 ################## SNAKEFILE PARAMETERS #####################
 
-output_dir: output-v18-with-AF-without-filter        # relative to base_dir
-version:    v18-af             # v7 or v7-af
-
+bin_dir: ../bin/          # script location
+output_dir: v1 # output-v18-with-AF-without-filter        # relative to base_dir
+version:    v18-af    # v7 or v7-af
 
 #################### RULES PARAMETERS #######################
 
@@ -19,12 +18,12 @@ complexity:
   enabled:   True  # if True, complexity is applied
 
 filter:
-  enabled:   False  # if True, filter is applied
+  enabled:   True  # if True, filter is applied
   recur-max: 100%  # absolute or percentage (ex: 100 or 70%)
   abund-min: 6     # noise level
 
 merge_kmer:
-  min_pos: 3       # Minimum number of positive counts (default: 1)
+  min_pos: 3       # Minimum number of positive counts
 
 ################# OTHER SNAKEFILE PARAMETERS ####################
 
@@ -32,7 +31,7 @@ kmerator:
   release: 108    # transcriptome release
   jellyfish:  /data/indexes/jellyfish/human/GRCh37_canonical.jf
 
-genome:     genomes/GRCh37.primary_assembly.genome.fa
+genome:     /data/genomes/human/GRCh37.ncbi/GRCh37.fa
 
 annot:
   version: GRCh37

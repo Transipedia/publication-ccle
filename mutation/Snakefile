@@ -5,7 +5,7 @@ configfile: "config.yaml"
 
 # Global
 version                  = config["version"]
-source_dir               = os.path.join(config["base_dir"], config["source_dir"])
+source_dir               = os.path.join(config["base_dir"], 'input')
 output_dir               = os.path.join(config["base_dir"], config["output_dir"])
 genes                    = config["genes"]
 categs                   = ["alt", "ref"]   # ["alt", "ref", "both"]
@@ -15,13 +15,12 @@ depmap_mutations_file    = "CCLE_mutations_DepMap_22Q2.csv"
 depmap_src               = "https://ndownloader.figshare.com/files/34989940"
 depmap_file              = os.path.join(source_dir, f"{basename_file}.tsv")
 depmap_headers_file      = os.path.join(source_dir, f"{basename_file}_header.csv")
-### step 2. DepMap filtered
+### step 2. Filter DepMap as new TSV file
 depmap_filtered_file     = os.path.join(output_dir, f"{basename_file}_filtered.tsv")
-### step 3. Split DepMap files by gene  as VCF format
+### step 3. Split fltered DepMap files onto VCF format file, by gene
 vcf_by_gene_dir          = os.path.join(output_dir, "by-gene")
 ### step 4. get mutation flanking kmers in vcf2seq results
 vcf2seq_dir              = os.path.join(output_dir, "vcf2seq")
-vcf2seq_exonic_dir       = os.path.join(output_dir, "vcf2seq-exonic")
 ### fa2kmer_31 expand 61 mers to 31 mers
 fa2seq_dir            = os.path.join(output_dir, "fa2seq")
 # step find-exonic 1. Download Annotation (used to find kmers overlapping on intron)
@@ -29,14 +28,7 @@ annot_file               = f"gencode.v{config['annot']['release']}lift37.annotat
 annot_url                = os.path.join(f"https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_{config['annot']['release']}/{config['annot']['version']}_mapping", annot_file) if config['annot']['release'] == "GRCh37" else os.path.join(f"https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_{config['annot']['release']}/{config['annot']['version']}_mapping", annot_file)
 # step find-exonic 2. Annotate exon (used to find kmers overlapping on intron)
 annot_src                = os.path.join(source_dir, annot_file)
-# ~ annot_exon               = f"{'.'.join(annot_src.split('.')[:-2])}.exon.gff3"
-# step find-exonic 3. BED files (used to find kmers overlapping on intron)
-# ~ bed_ref_dir              = os.path.join(output_dir, "bed1_ref")
-# ~ bed_exonic_dir           = os.path.join(output_dir, "bed2_exonics")
-# ~ bed_lost_dir             = os.path.join(output_dir, "bed3_lost")
-# ~ # step find-exonic 4. find exon/intron kmers
-# ~ vcf2seq_lost_dir            = os.path.join(output_dir, "vcf2seq-results-lost")
-# step 5. kmerator on seqtailor kmers
+# step 5. set kmerator on probes
 kmerator_dir             = os.path.join(output_dir, "kmerator")
 # step 6. complexity filter
 complexity_dir           = os.path.join(output_dir, "complexity")
@@ -58,10 +50,10 @@ false_pos                = os.path.join(vaf_extracts_dir, "false-pos.tsv"),
 true_pos                 = os.path.join(vaf_extracts_dir, "true-pos.tsv"),
 
 # step 9. Table tsv file
-table_file               =  os.path.join(output_dir, subdir, "table.tsv")
+table_file               = os.path.join(output_dir, subdir, "table.tsv")
 
 # step 10. Plots
-plots_dir                =  os.path.join(output_dir, subdir, "plots")
+plots_dir                = os.path.join(output_dir, subdir, "plots")
 sensiblt_plot            = os.path.join(plots_dir, f"plot-sensibility-{version}.png")
 specifct_plot            = os.path.join(plots_dir, f"plot-specificity-{version}.png")
 stackbar_plot            = os.path.join(plots_dir, f"plot-stackbar-percent-{version}.png")
@@ -105,7 +97,7 @@ rule all:
         os.path.join(vaf_extracts_dir, "false-pos.tsv"),
         os.path.join(vaf_extracts_dir, "true-pos.tsv"),
         ### Make the final table
-        # ~ table_file,
+        table_file,
         ### Make the plots
         sensiblt_plot,
         specifct_plot,
@@ -158,7 +150,7 @@ rule depmap_csv_to_tsv:
         "}}' {input}"
         " > .~depmap_filtered_temp"
         " ; "
-        "bin/clean_depmap_vcf.py {params.isCOSMIChotspot} .~depmap_filtered_temp -o {output}"
+        "../bin/clean_depmap_vcf.py {params.isCOSMIChotspot} .~depmap_filtered_temp -o {output}"
         " ; "
         "rm .~depmap_filtered_temp"
 
@@ -181,13 +173,16 @@ rule vcf2seq_61:
     output:
         vcf2seq_dir +  "/{categ}/" + basename_file + "_{gene}.fa"
     params:
-        genome = os.path.join(config['base_dir'], config['genome']),
+        bin = os.path.join(config['bin_dir'], 'vcf2seq.py'),
+        genome_src = config['genome'],
+        genome = os.path.join(source_dir, os.path.basename(config['genome'])),
         depmap = depmap_filtered_file,
         kmer_size = "61",
     shell:
-        "vcf2seq -t {wildcards.categ} -s {params.kmer_size} -g {params.genome} {input} -o {output} ; "
+        "[ -h {params.genome} ] || ln -s {params.genome_src} {params.genome} ; "
+        "{params.bin} -t {wildcards.categ} -s {params.kmer_size} -g {params.genome} {input} -o {output} ; "
         ### Add SSR and vaf
-        "bin/addSRR2header.py -d {depmap_filtered_file} {output}"
+        "../bin/addSRR2header.py -d {depmap_filtered_file} {output}"
 
 
 rule kmerator:
@@ -218,12 +213,13 @@ rule complexity:
     output:
         os.path.join(complexity_dir, "{categ}", basename_file) + "_{gene}.fa"
     params:
+        bin = os.path.join(config['bin_dir'], 'complexity.R'),
         complex_tab = os.path.join(complexity_dir, "{categ}", basename_file) + "_{gene}-complex-tab.tsv",
         complex_fa = os.path.join(complexity_dir, "{categ}", basename_file) + "_{gene}-complex.fa"
     shell:
         """
         if [ -s {input} ] ; then
-         Rscript bin/complexity.R {input} {params.complex_tab} {params.complex_fa} ;
+         Rscript {params.bin} {input} {params.complex_tab} {params.complex_fa} ;
          else touch {params.complex_fa} {params.complex_tab};
         fi ;
 
@@ -258,9 +254,10 @@ rule merge_kmer:
     output:
         os.path.join(merge_kmer_dir, "{categ}", basename_file) + "_{gene}.tsv",
     params:
+        bin = os.path.join(config['bin_dir'], 'merge-kmer.py'),
         min_pos = config['merge_kmer']['min_pos'] or 1,
     shell:
-        "bin/merge-kmer.py --min-pos {params.min_pos} {input} -o {output}"
+        "{params.bin} --min-pos {params.min_pos} {input} -o {output}"
 
 
 rule filter:        # get out recurrency and noise
@@ -269,10 +266,11 @@ rule filter:        # get out recurrency and noise
     output:
         os.path.join(filter_kmer_dir, "alt", basename_file) + "_{gene}.tsv",
     params:
+        bin = os.path.join(config['bin_dir'], 'filter.py'),
         recur_max = config['filter']['recur-max'],
         abund_min = config['filter']['abund-min'],
     shell:
-        "bin/filter.py {input} --recur-max {params.recur_max} --abund-min {params.abund_min} -o {output}"
+        "{params.bin} {input} --recur-max {params.recur_max} --abund-min {params.abund_min} -o {output}"
 
 
 alt_kmer_dir = filter_kmer_dir if config['filter']['enabled'] else merge_kmer_dir
@@ -285,16 +283,16 @@ rule mk_table:
         # ~ reindeer_alt = expand(os.path.join(rdeer_dir, "alt", basename_file) + "_{gene}.tsv", gene=genes, categ=categs),
         # ~ rdeer = expand(os.path.join(rdeer_merged_counts_dir, basename_file) + "_{gene}.tsv", gene=genes),
         # ~ seqt_lost = expand(os.path.join(vcf2seq_lost_dir, basename_file) + "_{gene}.fa", gene=genes),
-        # ~ exonic = expand(os.path.join(vcf2seq_exonic_dir, "{categ}", basename_file) + "_{gene}.fa", gene=genes, categ=categs),
     output:
         table_file
     params:
+        bin = os.path.join(config['bin_dir'], 'mk-table.py'),
         abun_min = config["filter"]["abund-min"] if config["filter"]["enabled"] else 1,
         recur_max = config["filter"]["recur-max"] if config["filter"]["enabled"] else "100%",
         min_pos = config["merge_kmer"]["min_pos"],
         basedir = output_dir,
     shell:
-        "bin/mk-table.py {params.basedir} -a {params.abun_min} -r {params.recur_max} -m {params.min_pos} -o {output}"
+        "{params.bin} {params.basedir} -a {params.abun_min} -r {params.recur_max} -m {params.min_pos} -o {output}"
 
 
 rule vaf:
@@ -304,8 +302,10 @@ rule vaf:
             depmap = os.path.join(vcf_by_gene_dir, basename_file) + "_{gene}.vcf",
         output:
             tsv = os.path.join(vaf_dir, basename_file) + "_{gene}.tsv",
+        params:
+            bin = os.path.join(config['bin_dir'], 'vaf.py'),
         shell:
-            "bin/vaf.py {input.ref} {input.alt} {input.depmap} > {output.tsv}"
+            "{params.bin} {input.ref} {input.alt} {input.depmap} > {output.tsv}"
 
 
 rule vaf_report:
@@ -314,10 +314,10 @@ rule vaf_report:
     output:
         vaf_report,
     params:
-        plots_dir = plots_dir,
+        bin = os.path.join(config['bin_dir'], 'vaf-report.py'),
         vaf_dir = vaf_dir,
     shell:
-        "bin/vaf-report.py {params.vaf_dir} -o {output}"
+        "{params.bin} {params.vaf_dir} -o {output}"
 
 
 rule vaf_extracts:
@@ -327,10 +327,11 @@ rule vaf_extracts:
         false_pos = os.path.join(vaf_extracts_dir, "false-pos.tsv"),
         true_pos = os.path.join(vaf_extracts_dir, "true-pos.tsv"),
     params:
+        bin = os.path.join(config['bin_dir'], 'vaf-extracts.sh'),
         input_dir = vaf_dir,
         output_dir = vaf_extracts_dir,
     shell:
-        "bin/vaf-extracts.sh {params.input_dir} {params.output_dir}"
+        "{params.bin} {params.input_dir} {params.output_dir}"
 
 
 rule mk_plots:
@@ -342,11 +343,14 @@ rule mk_plots:
         sensiblt = sensiblt_plot,
         specifct = specifct_plot,
         stackbar = stackbar_plot,
-        plots_dir = directory(plots_dir),
+
     params:
+        plot_snake = os.path.join(config['bin_dir'], 'plots-snake.py'),
+        plot_af = os.path.join(config['bin_dir'], 'plot-AF.py'),
+        plots_dir = plots_dir,
         abun_min = config["filter"]["abund-min"],
         recur_max = config["filter"]["recur-max"],
         version = version,
     shell:
-        "bin/plots-snake.py {input.table} -a {params.abun_min} -r {params.recur_max} -v {params.version} -o {plots_dir};"
-        "bin/plot-AF.py -t {input.true_pos} -f {input.false_pos} -o {output.plots_dir}"
+        "{params.plot_snake} {input.table} -a {params.abun_min} -r {params.recur_max} -v {params.version} -o {params.plots_dir};"
+        "{params.plot_af} -t {input.true_pos} -f {input.false_pos} -o {params.plots_dir}"

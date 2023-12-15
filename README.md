@@ -3,10 +3,7 @@ scripts and other files to be able to reproduce  the CCLE Transipedia publicatio
 
 ## Prerequisite
 
-### software
-- kmerator [https://github.com/Transipedia/kmerator](https://github.com/Transipedia/kmerator)
-- rdeer-service [https://github.com/Bio2M/rdeer-service](https://github.com/Bio2M/rdeer-service)
-- snakemake [https://github.com/snakemake/snakemake](https://github.com/snakemake/snakemake)
+
 
 ### The CCLE Reindeer index
 
@@ -18,15 +15,32 @@ The core of the study is the CCLE index built by Reindeer, comprising 1019 sampl
 - in the index directory, create a tsv file named **fos.txt**. It must contains the list of the samples in the first column and the normalized value of the sample (computed using the kmer number of the fastq files of the sample) (needed by rdeer-service)
 - If you have used the  ``--disk-query`` Reindeer index option in the directory index, create an empty file named **disk-query** (needed by rdeer-service).
 
-### python environment
+### softwares and python environment
 
-Some python scripts needs external libraries. There are listed in the ``requirements.txt`` file. 
-from a virtualenv, the install command is 
+The applications below are needed:
+
+- kmerator [https://github.com/Transipedia/kmerator](https://github.com/Transipedia/kmerator)
+- rdeer-service [https://github.com/Bio2M/rdeer-service](https://github.com/Bio2M/rdeer-service)
+- snakemake [https://github.com/snakemake/snakemake](https://github.com/snakemake/snakemake)
+
+In addition, some python scripts needs external libraries:
+
+- PyYAML
+- pyfaidx
+- pandas
+- plotly
+- seaborn 
+
+All these are listed in the ``requirements.txt`` file. 
+So, you can install python softwares and libraries with pip:
 
 ```
 pip install -r requirements.txt
 ```
 
+### R environment
+
+R script needs the library ``Biostring``, show the documentation at [https://bioconductor.org/packages/release/bioc/html/Biostrings.html](https://bioconductor.org/packages/release/bioc/html/Biostrings.html)
 
 ## Load the CCLE index
 
@@ -61,7 +75,7 @@ snakemake --rulegraph | dot -Tsvg > dag.svg
 Finally, the pipeline will be started by
 
 ```
-snakemake 
+snakemake -j 12
 ```
 
 ## Mutation part
@@ -80,6 +94,7 @@ The mutations part is based on the Snakemake pipeline manager.
 
 ```
 ### General parameters
+bin_dir:     # location of scripts
 base_dir : # result base directory
 thread :    # the multithreaded commands will use this parameters
 output_dir : # relative to base_dir, change it for multiple analysis
