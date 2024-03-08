@@ -1,3 +1,10 @@
 results/
+
+# Snakemake
 .snakemake/
+
+# Python
 __pycache__/
+
+# R
+.Rhistory

@@ -35,9 +35,9 @@ complexity_dir           = os.path.join(output_dir, "complexity")
 # step 7. Reindeer results
 rdeer_dir                = os.path.join(output_dir, "reindeer")
 # step 8. Merge kmers by mutation
-merge_kmer_dir           = os.path.join(output_dir, f"merge_kmer-minpos{config['merge_kmer']['min_pos']}")
+merge_kmer_dir           = os.path.join(output_dir, f"merge_kmer-minpos{config['merge_kmer']['min_hits']}")
 # step 9. Filter merged kmers by reccurency and noise
-subdir = f"a{config['filter']['abund-min']}-r{config['filter']['recur-max']}-minpos{config['merge_kmer']['min_pos']}"
+subdir = f"a{config['filter']['abund-min']}-r{config['filter']['recur-max']}-minpos{config['merge_kmer']['min_hits']}"
 filter_kmer_dir          = os.path.join(output_dir, subdir, "filter_kmer")
 
 # step 10. compute comparative VAFs between DepMap and Reindeer
@@ -255,9 +255,9 @@ rule merge_kmer:
         os.path.join(merge_kmer_dir, "{categ}", basename_file) + "_{gene}.tsv",
     params:
         bin = os.path.join(config['bin_dir'], 'merge-kmer.py'),
-        min_pos = config['merge_kmer']['min_pos'] or 1,
+        min_hits = config['merge_kmer']['min_hits'] or 1,
     shell:
-        "{params.bin} --min-pos {params.min_pos} {input} -o {output}"
+        "{params.bin} --min-pos {params.min_hits} {input} -o {output}"
 
 
 rule filter:        # get out recurrency and noise
@@ -289,10 +289,10 @@ rule mk_table:
         bin = os.path.join(config['bin_dir'], 'mk-table.py'),
         abun_min = config["filter"]["abund-min"] if config["filter"]["enabled"] else 1,
         recur_max = config["filter"]["recur-max"] if config["filter"]["enabled"] else "100%",
-        min_pos = config["merge_kmer"]["min_pos"],
+        min_hits = config["merge_kmer"]["min_hits"],
         basedir = output_dir,
     shell:
-        "{params.bin} {params.basedir} -a {params.abun_min} -r {params.recur_max} -m {params.min_pos} -o {output}"
+        "{params.bin} {params.basedir} -a {params.abun_min} -r {params.recur_max} -m {params.min_hits} -o {output}"
 
 
 rule vaf:

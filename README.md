@@ -12,7 +12,7 @@ The core of the study is the CCLE index built by Reindeer, comprising 1019 sampl
 - **download** all the 1019 fastq of the study  (11 TB), the [sra-CCLE_metadata.tsv](./sra-CCLE_metadata.tsv)  file contain the list and links to dowloads the selection of fastq files.
 - **trim** the fastq with cutadatp, options: **<TODO\>**
 - **build the index** (prefer --disk-mode) using trimmed fastq. 
-- in the index directory, create a tsv file named **fos.txt**. It must contains the list of the samples in the first column and the normalized value of the sample (computed using the kmer number of the fastq files of the sample) (needed by rdeer-service)
+- in the index directory, create a tsv file named **fos.txt**. It must contain the list of the samples in the first column and the normalized value of the sample (computed using the kmer number of the fastq files of the sample) (needed by rdeer-service). Follow the link below to rdeer-service for more details.
 - If you have used the  ``--disk-query`` Reindeer index option in the directory index, create an empty file named **disk-query** (needed by rdeer-service).
 
 ### softwares and python environment

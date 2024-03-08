@@ -23,7 +23,7 @@ filter:
   abund-min: 6     # noise level
 
 merge_kmer:
-  min_pos: 3       # Minimum number of positive counts
+  min_hits: 3       # Minimum number of positive counts
 
 ################# OTHER SNAKEFILE PARAMETERS ####################
 
