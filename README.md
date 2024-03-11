@@ -139,7 +139,9 @@ genes:		# list of interrest genes
   - ATRX
 ```
 
+## Quantification part
 
+The quantification folder holds multiple scripts evaluating Reindeer's quantification of gene expression or transposable elements. Please refer to the README.md in `quantification/` folder for more detailed information.
  
  
 
