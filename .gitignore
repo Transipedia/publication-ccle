@@ -1,4 +1,5 @@
 results/
+oldanalysis/
 
 # Snakemake
 .snakemake/
