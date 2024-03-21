@@ -139,6 +139,29 @@ genes:		# list of interrest genes
   - ATRX
 ```
 
+## Chimera part
+
+For now, the chimera part is computed with a bash script : 
+
+- ``depmap_fusion_to_bed.sh``: main script to generate chimera probes, specific 31-mers from the input CCLE fusion annotation file [https://depmap.org/portal/download/all/?releasename=DepMap+Public+22Q2&filename=CCLE_fusions.csv](https://depmap.org/portal/download/all/?releasename=DepMap+Public+22Q2&filename=CCLE_fusions.csv) and count matrix by fusion events in all the samples from a reindeer index 
+- ``config.sh``: script to declare annotation files
+	- ``genome``= reference genome in fasta format
+	- ``exons``= exon annotations from gencode in bed format
+	- ``prime3 ``= bedfile of the 3' end of exons generated from the exons bed file
+	-  ``prime5 ``= bedfile of the 5' end of exons generated from the exons bed file
+	-  ``server ``= put the name of the server where the index is loaded
+	-  ``index ``= name of the reindeer index
+	
+Once you configured your variables you can use the ``depmap_fusion_to_bed.sh`` as follow :
+
+``depmap_fusion_to_bed.sh -a annotfile -c cclefile [-t threshold]``
+
+With :
+
+- ``annotfile``= 
+- ``cclefile``= depmap fusion annotation file [https://depmap.org/portal/download/all/?releasename=DepMap+Public+22Q2&filename=CCLE_fusions.csv](https://depmap.org/portal/download/all/?releasename=DepMap+Public+22Q2&filename=CCLE_fusions.csv)
+- ``threshold``= integer to filter events from depmap having less than x reads supporting the junction (0 by default)
+
 ## Quantification part
 
 The quantification folder holds multiple scripts evaluating Reindeer's quantification of gene expression or transposable elements. Please refer to the README.md in `quantification/` folder for more detailed information.
