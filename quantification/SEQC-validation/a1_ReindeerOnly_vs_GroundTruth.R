@@ -6,27 +6,29 @@ library(ggplot2)
 library(ggpointdensity)
 library(patchwork)
 
-WKDIR <- "~/Projects/working-bench/ReindeerAppli/"
-INDIR <- paste0(WKDIR, "data/")
-OUTDIR <- paste0(WKDIR, "res_cmp2SEQC/reindeeronly/")
+# WKDIR <- "~/Projects/working-bench/ReindeerAppli/"
+# INDIR <- paste0(WKDIR, "data/")
+# OUTDIR <- paste0(WKDIR, "res_cmp2SEQC/reindeeronly/")
 
+cmd.Args <- commandArgs(trailingOnly = TRUE)
+TAQMAN_TAB <- cmd.Args[1] # merged-Taqman-raw_reindeer-IDs_tab.tsv
+ENSG2SYMBOL_PATH <- cmd.Args[2] # geneSymbol_SEQC_to_ENST.tsv
+REINDEER_TAB <- cmd.Args[3] # reindeerOnly/SEQC-genes-whole-canonical-seq_on_SEQC_raw_counts_k31.out
+OUTDIR <- cmd.Args[4]
 if (!dir.exists(OUTDIR)) {
     dir.create(OUTDIR, recursive = TRUE)
     cat("Created output folder:", OUTDIR, "\n")
 }
 
 # Load and parse Taqman table
-tab.taqman <- read.table(paste0(INDIR, "merged-Taqman-raw_reindeer-IDs_tab.tsv"),
-                         header = TRUE, sep = "\t") %>%
+tab.taqman <- read.table(TAQMAN_TAB, header = TRUE, sep = "\t") %>%
     pivot_longer(cols = -Symbol, values_to = "Counts.true", names_to = "Sample.assay")
 
 # Load and parse Reindeer table
-ensg2symbol <- read.table(paste0(INDIR, "geneSymbol_SEQC_to_ENST.tsv"), sep = "\t",
-                          header = FALSE) %>%
+ensg2symbol <- read.table(ENSG2SYMBOL_PATH, sep = "\t", header = FALSE) %>%
     dplyr::filter(V1 != "C10orf93") %>%
     tibble::column_to_rownames("V2")
-tab.reindeer <- read.table(paste0(INDIR, "reindeerOnly/SEQC-genes-whole-canonical-seq_on_SEQC_raw_counts_k31.out"),
-                           header = TRUE, sep = "\t") %>%
+tab.reindeer <- read.table(REINDEER_TAB, header = TRUE, sep = "\t") %>%
     dplyr::mutate(seq_name = str_remove_all(seq_name, " ")) %>%
     dplyr::mutate(Symbol = ensg2symbol[seq_name, "V1"]) %>%
     dplyr::select(-seq_name) %>%

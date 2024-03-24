@@ -6,22 +6,28 @@ library(ggplot2)
 library(ggpointdensity)
 library(patchwork)
 
-WKDIR <- "~/Projects/working-bench/ReindeerAppli/"
-INDIR <- paste0(WKDIR, "data/1000ERV-56samples/")
-OUTDIR <- paste0(WKDIR, "res_HERV1000/")
+# WKDIR <- "~/Projects/working-bench/ReindeerAppli/"
+# INDIR <- paste0(WKDIR, "data/1000ERV-56samples/")
+# OUTDIR <- paste0(WKDIR, "res_HERV1000/")
+
+cmd.Args <- commandArgs(trailingOnly = TRUE)
+TELESCOPE_TAB <- cmd.Args[1] # Telescope_rmsk_colon_RAW.tsv
+SMP_LIST <- cmd.Args[2]
+ERVS2CONSIDER <- cmd.Args[3]
+REINDEER_RES <- cmd.Args[4] # contigs_HERV_on_CCLE-56-cut.out
+OUTDIR <- cmd.Args[5]
 
 # Load and parse Taqman table
-old.tab <- read.table(paste0(INDIR, "Telescope_rmsk_colon_CPM_1000.tsv"), header = TRUE)
-tab.TE <- read.table(paste0(INDIR, "Telescope_rmsk_colon_RAW.tsv"),
-                     header = TRUE, sep = "\t")
-colnames(tab.TE) <- colnames(old.tab)
-tab.TE <- tab.TE[tab.TE$Transcript %in% old.tab$Transcript, ] %>%    
+tab.colnames <- c("Transcript", as.character(read.table(SMP_LIST, header = FALSE)$V1))
+tab.TE <- read.table(TELESCOPE_TAB, header = TRUE, sep = "\t")
+colnames(tab.TE) <- tab.colnames
+ervs2consider <- as.character(read.table(ERVS2CONSIDER, header = FALSE)$V1)
+tab.TE <- tab.TE[tab.TE$Transcript %in% ervs2consider, ] %>%    
     pivot_longer(cols = -Transcript, values_to = "Counts.Telescope", names_to = "Sample.assay") %>%
     dplyr::rename(Symbol = Transcript)
 
 # Load and parse Reindeer table
-tab.reindeer <- read.table(paste0(INDIR, "contigs_HERV_on_CCLE-56-cut.out"),
-                           header = TRUE, sep = "\t") %>%
+tab.reindeer <- read.table(REINDEER_RES, header = TRUE, sep = "\t") %>%
     pivot_longer(cols = -seq_name, values_to = "Query.reindeer", names_to = "Sample.assay") %>%
     dplyr::mutate(Symbol = str_remove(seq_name, "\\.contig[0-9]+")) %>%
     dplyr::select(-seq_name)

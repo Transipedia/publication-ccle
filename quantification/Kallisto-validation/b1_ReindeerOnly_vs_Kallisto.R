@@ -5,26 +5,32 @@ library(ggplot2)
 library(ggpointdensity)
 library(patchwork)
 
-WKDIR <- "~/Projects/working-bench/ReindeerAppli/"
-INDIR <- paste0(WKDIR, "data/")
-OUTDIR <- paste0(WKDIR, "res_cmp2Kallisto/reindeeronly/")
+# WKDIR <- "~/Projects/working-bench/ReindeerAppli/"
+# INDIR <- paste0(WKDIR, "data/")
+# OUTDIR <- paste0(WKDIR, "res_cmp2Kallisto/reindeeronly/")
 
+cmd.Args <- commandArgs(trailingOnly = TRUE)
+ENST2SYMBOL_PATH <- cmd.Args[1]
+GTF_PATH <- cmd.Args[2]
+MISSING_GENG_PATH <- cmd.Args[3]
+KALLISTO_DIR <- cmd.Args[4]
+REINDEER_DIR <- cmd.Args[5]
+OUTDIR <- cmd.Args[6]
 if (!dir.exists(OUTDIR)) {
     dir.create(OUTDIR, recursive = TRUE)
     cat("Created output folder:", OUTDIR, "\n")
 }
 
 # Transcript ID to gene symbol
-enst2symbol <- read.table(paste0(INDIR, "geneSymbol_SEQC_to_ENST.tsv"), sep = "\t",
-                          header = FALSE) %>%
+enst2symbol <- read.table(ENST2SYMBOL_PATH, sep = "\t", header = FALSE) %>%
     dplyr::filter(V1 != "C10orf93") %>%
     tibble::column_to_rownames("V2")
-syno2symbol <- read.table(paste0(INDIR, "missing_genes.tsv"), header = FALSE, row.names = 3)
+syno2symbol <- read.table(MISSING_GENG_PATH, header = FALSE, row.names = 3)
 all(enst2symbol[rownames(syno2symbol), "V1"] == syno2symbol$V1)
 enst2symbol[rownames(syno2symbol), "V1"] <- syno2symbol$V2
 
 # Gene ID to gene symbol
-id2symbol <- read.table(paste0(INDIR, "Homo_sapiens.GRCh38.108.gtf"), sep = "\t") %>%
+id2symbol <- read.table(GTF_PATH, sep = "\t") %>%
     dplyr::filter(V3 == "gene")
 id2symbol <- lapply(id2symbol$V9,
                     FUN = function(x) data.frame("SYMBOL" = strsplit(x, ";")[[1]][3],
@@ -35,19 +41,19 @@ id2symbol <- lapply(id2symbol$V9,
     tibble::column_to_rownames("ID")
 
 # Load and parse Taqman table
-tab.count <- read.table(paste0(INDIR, "kallisto-ensembl108/gene-counts-tximport.tsv"),
+tab.count <- read.table(paste0(KALLISTO_DIR, "gene-counts-tximport.tsv"),
                         header = TRUE, sep = "\t") %>%
     tibble::rownames_to_column("ID") %>%
     pivot_longer(cols = -ID, values_to = "Kallisto.counts", names_to = "Sample.assay") %>%
     dplyr::mutate(Symbol = id2symbol[ID, "SYMBOL"])
-tab.abundance <- read.table(paste0(INDIR, "kallisto-ensembl108/gene-abundance-tximport.tsv"),
+tab.abundance <- read.table(paste0(KALLISTO_DIR, "gene-abundance-tximport.tsv"),
                             header = TRUE, sep = "\t") %>%
     tibble::rownames_to_column("ID") %>%
     pivot_longer(cols = -ID, values_to = "Kallisto.TPM", names_to = "Sample.assay") %>%
     dplyr::mutate(Symbol = id2symbol[ID, "SYMBOL"])
 
 # Load and parse Reindeer table
-tab.reindeer <- read.table(paste0(INDIR, "reindeeronly/SEQC-genes-whole-canonical-seq_on_SEQC_raw_counts_k31.out"),
+tab.reindeer <- read.table(paste0(REINDEER_DIR, "SEQC-genes-whole-canonical-seq_on_SEQC_raw_counts_k31.out"),
                            header = TRUE, sep = "\t") %>%
     dplyr::mutate(seq_name = enst2symbol[seq_name, "V1"]) %>%
     dplyr::mutate(seq_name = str_replace(seq_name, "C10orf93", "C10orf92")) %>%

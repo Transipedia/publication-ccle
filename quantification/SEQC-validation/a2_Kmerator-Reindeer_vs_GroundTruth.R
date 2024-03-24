@@ -5,30 +5,31 @@ library(ggplot2)
 library(ggpointdensity)
 library(patchwork)
 
-WKDIR <- "~/Projects/working-bench/ReindeerAppli/"
-INDIR <- paste0(WKDIR, "data/")
-OUTDIR <- paste0(WKDIR, "res_cmp2SEQC/reindeer-kmerator2taqman/")
+# WKDIR <- "~/Projects/working-bench/ReindeerAppli/"
+# INDIR <- paste0(WKDIR, "data/")
+# OUTDIR <- paste0(WKDIR, "res_cmp2SEQC/reindeer-kmerator2taqman/")
 
+cmd.Args <- commandArgs(trailingOnly = TRUE)
+TAQMAN_TAB <- cmd.Args[1] # merged-Taqman-raw_reindeer-IDs_tab.tsv
+REINDEER_TAB <- cmd.Args[2] # kmerator-reindeer/SEQC-genes_on_SEQC_raw_counts_k31_kmerator.out
+OUTDIR <- cmd.Args[3]
 if (!dir.exists(OUTDIR)) {
     dir.create(OUTDIR, recursive = TRUE)
     cat("Created output folder:", OUTDIR, "\n")
 }
 
 # Load and parse Taqman table
-tab.taqman <- read.table(paste0(INDIR, "merged-Taqman-raw_reindeer-IDs_tab.tsv"),
-                         header = TRUE, sep = "\t") %>%
+tab.taqman <- read.table(TAQMAN_TAB, header = TRUE, sep = "\t") %>%
     pivot_longer(cols = -Symbol, values_to = "Counts.true", names_to = "Sample.assay")
 
 # Load and parse Reindeer table
-tab.reindeer <- read.table(paste0(INDIR, "kmerator-reindeer/SEQC-genes_on_SEQC_raw_counts_k31_kmerator.out"),
-                           header = TRUE, sep = "\t") %>%
+tab.reindeer <- read.table(REINDEER_TAB, header = TRUE, sep = "\t") %>%
     dplyr::mutate(seq_name = str_replace(seq_name, "C10orf93", "C10orf92")) %>%
     unique() %>%
     pivot_longer(cols = -seq_name, values_to = "Query.reindeer", names_to = "Sample.assay") %>%
     dplyr::mutate(Symbol = lapply(seq_name,
                                   FUN = function(x) strsplit(x, split = ":")[[1]][1]) %>% unlist())
     
-
 tab.reindeer <- aggregate(tab.reindeer$Query.reindeer,
                           by = list(tab.reindeer$Symbol, tab.reindeer$Sample.assay),
                           FUN = function(qs) paste0(qs, collapse = ",")) %>%
