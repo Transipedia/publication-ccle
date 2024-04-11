@@ -158,7 +158,7 @@ Once you configured your variables you can use the ``depmap_fusion_to_bed.sh`` a
 
 With :
 
-- ``annotfile``= 
+- ``annotfile``= corresponding depmap / SRR cell line names. A file is included into the chimera directory (`PRJNA523380_CCLE_metadata_RNAseq-name-to-srr-and-depmap.csv`)
 - ``cclefile``= depmap fusion annotation file [https://depmap.org/portal/download/all/?releasename=DepMap+Public+22Q2&filename=CCLE_fusions.csv](https://depmap.org/portal/download/all/?releasename=DepMap+Public+22Q2&filename=CCLE_fusions.csv)
 - ``threshold``= integer to filter events from depmap having less than x reads supporting the junction (0 by default)
 
