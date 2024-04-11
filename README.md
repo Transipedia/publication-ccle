@@ -51,7 +51,7 @@ Thanks to rdeer-service, you can load the index in memory, and run multiple quer
 
 ## Using snakemake
 
-As the mutation and chimera pipelines are launched with snakemake, it's needed to know 
+As the mutation pipeline is launched with snakemake, it's needed to know 
 some option of it. 
 
 ### create the DAG
