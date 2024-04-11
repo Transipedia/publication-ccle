@@ -5,14 +5,21 @@ library(ggplot2)
 library(ggpointdensity)
 library(patchwork)
 
-WKDIR <- "~/Projects/working-bench/ReindeerAppli/"
+# WKDIR <- "~/Projects/working-bench/ReindeerAppli/"
+
+cmd.Args <- commandArgs(trailingOnly = TRUE)
+CMP_TAB_PATH <- cmd.Args[1] # res_cmp2Kallisto/reindeer-kmerator2kallisto/kmerator-reindeer.tsv
+OUT_DIR <- cmd.Args[2] # fitting_slope/
+if (!dir.exists(OUT_DIR)) {
+    dir.create(OUT_DIR, recursive = TRUE)
+    cat("Created output folder:", OUT_DIR, "\n")
+}
 
 mthd <- "Sum.reindeer"
 count_column <- "Kallisto.counts"
 
 # Load Kalisto counts 
-cmp.tab <- read.table(paste0(WKDIR, "res_cmp2Kallisto/reindeer-kmerator2kallisto/kmerator-reindeer.tsv"),
-                      header = TRUE, sep = "\t")
+cmp.tab <- read.table(CMP_TAB_PATH, header = TRUE, sep = "\t")
 cmp.tab.pos <- cmp.tab[(cmp.tab[, mthd] > 0) & (cmp.tab[, count_column] > 0), ]
 
 # Fit slopes by gene ID
@@ -21,7 +28,7 @@ fit.tab <- cmp.tab.pos %>%
     dplyr::summarise("slope" = lm(formula = Sum.reindeer ~ Kallisto.counts)$coefficients[2],
                      "R2" = summary(lm(formula = Sum.reindeer ~ Kallisto.counts))$adj.r.squared,
                      "n_smp" = dplyr::n())
-write.table(fit.tab, paste0(WKDIR, "fitting_slope/fit_tab.tsv"), sep="\t", row.names = FALSE)
+write.table(fit.tab, paste0(OUT_DIR, "fit_tab.tsv"), sep="\t", row.names = FALSE)
 
 # Figure 1: histogram of adjusted R2
 plt1 <- ggplot(na.omit(fit.tab)) +
@@ -31,7 +38,7 @@ plt1 <- ggplot(na.omit(fit.tab)) +
     xlab("adjusted R-squared") +
     theme_bw() +
     theme(text = element_text(size=15))
-ggsave(plt1, filename = paste0(WKDIR, "fitting_slope/histoplot_R2_distribution.pdf"),
+ggsave(plt1, filename = paste0(OUT_DIR, "histoplot_R2_distribution.pdf"),
        width = 9, height = 3)
 
 # Remove fitting results by less than 5 samples
@@ -54,7 +61,7 @@ plt_lst <- lapply(top_genes, FUN = function(gene2sel) {
         theme(text = element_text(size = 12))
 })
 ggsave(wrap_plots(plt_lst, ncol = 5),
-       filename = paste0(WKDIR, "fitting_slope/top25_genes_fitted.pdf"),
+       filename = paste0(OUT_DIR, "top25_genes_fitted.pdf"),
        width = 15, height = 15)
 
 # Plot OK fitting cases
@@ -73,7 +80,7 @@ plt_lst <- lapply(ok_genes, FUN = function(gene2sel) {
         theme(text = element_text(size = 12))
 })
 ggsave(wrap_plots(plt_lst, ncol = 5),
-       filename = paste0(WKDIR, "fitting_slope/rank701to725_genes_fitted.pdf"),
+       filename = paste0(OUT_DIR, "rank701to725_genes_fitted.pdf"),
        width = 15, height = 15)
 
 # Plot worst fitting cases
@@ -92,5 +99,5 @@ plt_lst <- lapply(bottom_genes, FUN = function(gene2sel) {
         theme(text = element_text(size = 12))
 })
 ggsave(wrap_plots(plt_lst, ncol = 5),
-       filename = paste0(WKDIR, "fitting_slope/bottom25_genes_fitted.pdf"),
+       filename = paste0(OUT_DIR, "bottom25_genes_fitted.pdf"),
        width = 15, height = 15)

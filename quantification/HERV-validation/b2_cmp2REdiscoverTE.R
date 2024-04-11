@@ -6,29 +6,35 @@ library(ggplot2)
 library(ggpointdensity)
 library(patchwork)
 
-WKDIR <- "~/Projects/working-bench/ReindeerAppli/"
-INDIR <- paste0(WKDIR, "data/1000ERV-56samples/")
-OUTDIR <- paste0(WKDIR, "res_HERV1000/")
+# WKDIR <- "~/Projects/working-bench/ReindeerAppli/"
+# INDIR <- paste0(WKDIR, "data/1000ERV-56samples/")
+# OUTDIR <- paste0(WKDIR, "res_HERV1000/")
+
+cmd.Args <- commandArgs(trailingOnly = TRUE)
+CPM_TAB <- cmd.Args[1] # REdiscoverTE_colon_CPM.tsv
+RAW_TAB <- cmd.Args[2] # REdiscoverTE_raw.tsv
+SMP_LIST <- cmd.Args[3]
+REINDEER_RES <- cmd.Args[4] # REdiscoverERVs_max_tx_100_contig_spe_on_CCLE-1019-cut-disk_56-2.out
+OUTDIR <- cmd.Args[5]
+
+smp.list <- as.character(read.table(SMP_LIST, header = FALSE)$V1)
 
 # Load and parse Taqman table
-old.tab <- read.table(paste0(INDIR, "Telescope_rmsk_colon_CPM_1000.tsv"), header = TRUE)
-
-RE.CPM <- read.table(paste0(INDIR, "REdiscoverTE_colon_CPM.tsv"), header = TRUE)
-colnames(RE.CPM) <- colnames(old.tab)
+RE.CPM <- read.table(CPM_TAB, header = TRUE)
+colnames(RE.CPM) <- c("Transcript", smp.list)
 RE.CPM <- RE.CPM %>%
     pivot_longer(cols = -Transcript, values_to = "CPM.REdiscoverTE", names_to = "Sample.assay") %>%
     dplyr::rename(Symbol = Transcript)
 
-RE.raw <- read.table(paste0(INDIR, "REdiscoverTE_raw.tsv"), header = TRUE)
-RE.raw <- RE.raw[, c("TE", colnames(old.tab)[-1])] %>%
+RE.raw <- read.table(RAW_TAB, header = TRUE)
+RE.raw <- RE.raw[, c("TE", smp.list)] %>%
     pivot_longer(cols = -TE, values_to = "count.REdiscoverTE", names_to = "Sample.assay") %>%
     dplyr::rename(Symbol = TE)
 
 RE.comb <- merge(RE.raw, RE.CPM, by = c("Symbol", "Sample.assay"))
 
 # Load and parse Reindeer table
-tab.reindeer <- read.table(paste0(INDIR, "REdiscoverERVs_max_tx_100_contig_spe_on_CCLE-1019-cut-disk_56-2.out"),
-                           header = TRUE, sep = "\t") %>%
+tab.reindeer <- read.table(REINDEER_RES, header = TRUE, sep = "\t") %>%
     pivot_longer(cols = -seq_name, values_to = "Query.reindeer", names_to = "Sample.assay") %>%
     dplyr::mutate(Symbol = str_remove(seq_name, pattern = "-[a-z]+::.*")) %>%
     dplyr::select(-seq_name)

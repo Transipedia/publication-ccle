@@ -2,6 +2,8 @@
 
 This folder contains scripts to evaluate `REINDEER` quantification of arbitrary sequences in diverse situations, reproducing figures in preprint article [[C. Bessière, et. al. (2024)]](https://doi.org/10.1101/2024.02.27.581927).
 
+Each folder has a `run.sh` script indicating analysis workflow.
+
 ## 1. Accuracy of RNA expression measure
 
 ### 1.1. `SEQC-validation/`: contrast to qRT-PCR measurement
