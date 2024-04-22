@@ -1,29 +1,30 @@
-# publication-ccle
-scripts and other files to be able to reproduce  the CCLE Transipedia publication
+# Exploring a large cancer cell line RNA-sequencing dataset with k-mers
+scripts and other files to be able to reproduce the publication
 
-## Prerequisite
-
+## 1. Index preparation
 
 
 ### The CCLE Reindeer index
 
-The core of the study is the CCLE index built by Reindeer, comprising 1019 samples. It is to huge to be stored here (236 GB). The better way is to ask for us to transfer ours. But if you want build your own index, you have to 
+The core of the study is the CCLE index built by Reindeer, comprising 1019 samples. It is too large to be stored here (236 GB). A better way is to ask us to transfer it to you. But if you want build your own CCLE index, here is the procedure.
 
-- **download** all the 1019 fastq of the study  (11 TB), the [sra-CCLE_metadata.tsv](./sra-CCLE_metadata.tsv)  file contain the list and links to dowloads the selection of fastq files.
+_NB: this procedure is suited to Reindeer V 1.02 or earlier._
+
+- **download** all 1019 fastq files (11 TB), the [sra-CCLE_metadata.tsv](./sra-CCLE_metadata.tsv) file contain the list and links to download the selection of fastq files.
 - **trim** the fastq with cutadatp, options: **<TODO\>**
 - **build the index** (prefer --disk-mode) using trimmed fastq. 
 - in the index directory, create a tsv file named **fos.txt**. It must contain the list of the samples in the first column and the normalized value of the sample (computed using the kmer number of the fastq files of the sample) (needed by rdeer-service). Follow the link below to rdeer-service for more details.
 - If you have used the  ``--disk-query`` Reindeer index option in the directory index, create an empty file named **disk-query** (needed by rdeer-service).
 
-### softwares and python environment
+### software and python environment
 
-The applications below are needed:
+Applications below are needed:
 
 - kmerator [https://github.com/Transipedia/kmerator](https://github.com/Transipedia/kmerator)
 - rdeer-service [https://github.com/Bio2M/rdeer-service](https://github.com/Bio2M/rdeer-service)
 - snakemake [https://github.com/snakemake/snakemake](https://github.com/snakemake/snakemake)
 
-In addition, some python scripts needs external libraries:
+In addition, certain python scripts need external libraries:
 
 - PyYAML
 - pyfaidx
@@ -31,8 +32,7 @@ In addition, some python scripts needs external libraries:
 - plotly
 - seaborn 
 
-All these are listed in the ``requirements.txt`` file. 
-So, you can install python softwares and libraries with pip:
+All these are listed in the ``requirements.txt`` file, so, you can install all python software and libraries with pip:
 
 ```
 pip install -r requirements.txt
@@ -40,31 +40,30 @@ pip install -r requirements.txt
 
 ### R environment
 
-R script needs the library ``Biostring``, show the documentation at [https://bioconductor.org/packages/release/bioc/html/Biostrings.html](https://bioconductor.org/packages/release/bioc/html/Biostrings.html)
+The R script needs the library ``Biostring``, see documentation at [https://bioconductor.org/packages/release/bioc/html/Biostrings.html](https://bioconductor.org/packages/release/bioc/html/Biostrings.html)
 
 ## Load the CCLE index
 
-Thanks to rdeer-service, you can load the index in memory, and run multiple queries against the index very quicly, rdeer-service embed a special version of  Reindeer capable of running in socket mode.
+Rdeer-service loads the index in memory and enables running multiple queries against the index in real time. Rdeer-service embeds a special version of Reindeer capable of running in socket mode.
  
- We recommand to take a look on the README.md of rdeer-service to be able to load the CCLE index: [https://github.com/Bio2M/rdeer-service](https://github.com/Bio2M/rdeer-service).
+We recommand taking a look at the README.md of rdeer-service to learn how to load the CCLE index: [https://github.com/Bio2M/rdeer-service](https://github.com/Bio2M/rdeer-service).
  
 
 ## Using snakemake
 
-As the mutation pipeline is launched with snakemake, it's needed to know 
-some option of it. 
+The mutation pipeline is launched with snakemake. Thus some basic Snakemake usage is needed.  
 
 ### create the DAG
 
-create the pipeline DAG to visualize the sequence of process steps
+Create the pipeline's DAG to visualize process steps
 
 ```
 snakemake --rulegraph | dot -Tsvg > dag.svg
 ```
 
-### try blank test
+### try a blank test
 
- Simulating the pipeline launch allows you to check which rules will be executed and how often (and somtimes raise syntax errors)
+Simulating the pipeline launch allows you to check which rules will be executed and how often (and sometimes raise syntax errors)
  
  ```
  snakemake -n 
@@ -78,7 +77,11 @@ Finally, the pipeline will be started by
 snakemake -j 12
 ```
 
-## Mutation part
+## 2. Quantification tests
+
+The quantification folder holds multiple scripts evaluating Reindeer's quantification of gene expression or transposable elements. Please refer to the README.md in `quantification/` folder for more detailed information.
+
+## 3. Mutations
  
 The mutations part is based on the Snakemake pipeline manager. 
 
@@ -139,9 +142,9 @@ genes:		# list of interrest genes
   - ATRX
 ```
 
-## Chimera part
+## 4. Fusion transcripts
 
-For now, the chimera part is computed with a bash script : 
+For now, the fusion transcript/chimera part is computed with a bash script : 
 
 - ``depmap_fusion_to_bed.sh``: main script to generate chimera probes, specific 31-mers from the input CCLE fusion annotation file [https://depmap.org/portal/download/all/?releasename=DepMap+Public+22Q2&filename=CCLE_fusions.csv](https://depmap.org/portal/download/all/?releasename=DepMap+Public+22Q2&filename=CCLE_fusions.csv) and count matrix by fusion events in all the samples from a reindeer index 
 - ``config.sh``: script to declare annotation files
@@ -162,9 +165,7 @@ With :
 - ``cclefile``= depmap fusion annotation file [https://depmap.org/portal/download/all/?releasename=DepMap+Public+22Q2&filename=CCLE_fusions.csv](https://depmap.org/portal/download/all/?releasename=DepMap+Public+22Q2&filename=CCLE_fusions.csv)
 - ``threshold``= integer to filter events from depmap having less than x reads supporting the junction (0 by default)
 
-## Quantification part
 
-The quantification folder holds multiple scripts evaluating Reindeer's quantification of gene expression or transposable elements. Please refer to the README.md in `quantification/` folder for more detailed information.
  
  
 
