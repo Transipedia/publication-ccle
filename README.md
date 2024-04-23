@@ -49,34 +49,6 @@ Rdeer-service loads the index in memory and enables running multiple queries aga
 We recommand taking a look at the README.md of rdeer-service to learn how to load the CCLE index: [https://github.com/Bio2M/rdeer-service](https://github.com/Bio2M/rdeer-service).
  
 
-## Using snakemake
-
-The mutation pipeline is launched with snakemake. Thus some basic Snakemake usage is needed.  
-
-### create the DAG
-
-Create the pipeline's DAG to visualize process steps
-
-```
-snakemake --rulegraph | dot -Tsvg > dag.svg
-```
-
-### try a blank test
-
-Simulating the pipeline launch allows you to check which rules will be executed and how often (and sometimes raise syntax errors)
- 
- ```
- snakemake -n 
- ```
-
-### run the pipeline
-
-Finally, the pipeline will be started by
-
-```
-snakemake -j 12
-```
-
 ## 2. Quantification analysis
 
 The quantification folder holds multiple scripts evaluating Reindeer's quantification of gene expression or transposable elements. Please refer to the README.md in `quantification/` folder for more detailed information.
