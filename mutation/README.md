@@ -1,5 +1,5 @@
 ## This Snakemake pipeline performs mutation analysis in manuscript "Exploring a large cancer cell line RNA-sequencing dataset with k-mers".
-# Main Steps:
+### Main Steps:
 - Download Depmap files (rule: dnld_depmap)
 - Extract useful information and links to SSR IDs (rule: depmap_csv_to_tsv)
 - Split results as one file per gene (rule: vcf_by_gènes)
