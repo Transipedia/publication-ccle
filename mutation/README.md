@@ -14,3 +14,59 @@ This allows multiple queries running in real time on a memory resident index. To
 - Return Reindeer output if at least 3-kmers are matched, compute mean count per probe (rule: merge_kmer)
 - Discard results with mean counts <=5 (as in DepMap)
 - Compute VAFs, create result table and graphics. 
+
+### Files
+
+- ``Snakefile``: the pipeline definition file
+- ``config.yaml``: pipeline launch parameters and list of genes studied
+- ``bin/``: directory containing the scritps required for the pipeline
+- ``config.yml``: file used to set the pipeline parameters and list of genes to be studied.
+ 
+### Config.yml Parameters
+
+```
+### General parameters
+bin_dir:     # location of scripts
+base_dir : # result base directory
+thread :    # the multithreaded commands will use this parameters
+output_dir : # relative to base_dir, change it for multiple analysis
+version :  # some output file use the version in their name
+
+### rules parameters
+
+depmap:
+  filter_af  :  # to set a python test in the column 30 (named RNASeq_AC)
+  isCOSMIChotspot : #  if True, keep only probes found in the  'isCOSMIChotspot' column
+
+complexity:
+  enabled:   # if True, complexity rule is applied
+
+filter:
+  enabled:	# if True, filter rule is applied
+  recur-max:  # maximum recurrency to considere probes as positive.
+  abund-min: # minimum count of probe to considere it as positive
+
+merge_kmer:
+  min_pos:  # Minimum number of positive counts when merging kmer as probe
+
+kmerator:
+  release : # transcriptome release used for kmerator app
+  jellyfish:  # jellyfish genome index
+
+genome:     # genome fasta file
+
+annot:
+  version:  # genome annotation version (ex: GRCh37)
+  release:  # genome annotation release (ex: 42)
+
+reindeer:
+  index:  # Reindeer index directory name
+  server: # Reindeer server name
+  options: # additionnal options
+
+genes:		# list of interrest genes
+  - APC
+  - ARID1A
+  - ATM
+  - ATRX
+```
