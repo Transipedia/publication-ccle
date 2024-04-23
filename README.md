@@ -61,9 +61,11 @@ See mutations/README for detail.
 
 ## 4. Fusion / chimera analysis
 
-The fusion/chimera analysis is computed with a bash script. 
+The fusion/chimera analysis is computed with a bash script. See chimera/README for detail. 
 
-See chimera/README for detail
+## 5. Transposable element analysis
+
+See transposable_element/README for detail
 
  
 
