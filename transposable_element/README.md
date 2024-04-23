@@ -1,4 +1,4 @@
-# Validation of `REINDEER` Quantification in Different Situations
+# Transposable Element Analysis
 
 This folder contains scripts to evaluate `REINDEER` quantification of arbitrary sequences in diverse situations, reproducing figures in preprint article [[C. Bessière, et. al. (2024)]](https://doi.org/10.1101/2024.02.27.581927).
 
