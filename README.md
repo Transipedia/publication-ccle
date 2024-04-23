@@ -87,7 +87,7 @@ Mutations analysis is provided as a Snakemake pipeline.
 
 See mutations/README for detail. 
 
-## 4. Fusion transcripts / chimera analysis
+## 4. Fusion / chimera analysis
 
 The fusion/chimera analysis is computed with a bash script. 
 
