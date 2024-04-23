@@ -77,74 +77,19 @@ Finally, the pipeline will be started by
 snakemake -j 12
 ```
 
-## 2. Quantification tests
+## 2. Quantification analysis
 
 The quantification folder holds multiple scripts evaluating Reindeer's quantification of gene expression or transposable elements. Please refer to the README.md in `quantification/` folder for more detailed information.
 
-## 3. Mutations
+## 3. Mutation analysis
  
-The mutations part is based on the Snakemake pipeline manager. 
+Mutations analysis is provided as a Snakemake pipeline. 
 
-- ``Snakefile``: the pipeline definition file
-- ``config.yaml``: pipeline launch parameters and list of genes studied
-- ``bin/``: directory containing the scritps required for the pipeline
- 
-### the config.yaml file
- 
- The file ``config.yml`` is designed to modify the pipeline parameters, and also includes the list of genes to be studied.
- 
-#### Parameters
+See README for detail. 
 
-```
-### General parameters
-bin_dir:     # location of scripts
-base_dir : # result base directory
-thread :    # the multithreaded commands will use this parameters
-output_dir : # relative to base_dir, change it for multiple analysis
-version :  # some output file use the version in their name
+## 4. Fusion transcripts / chimera analysis
 
-### rules parameters
-
-depmap:
-  filter_af  :  # to set a python test in the column 30 (named RNASeq_AC)
-  isCOSMIChotspot : #  if True, keep only probes found in the  'isCOSMIChotspot' column
-
-complexity:
-  enabled:   # if True, complexity rule is applied
-
-filter:
-  enabled:	# if True, filter rule is applied
-  recur-max:  # maximum recurrency to considere probes as positive.
-  abund-min: # minimum count of probe to considere it as positive
-
-merge_kmer:
-  min_pos:  # Minimum number of positive counts when merging kmer as probe
-
-kmerator:
-  release : # transcriptome release used for kmerator app
-  jellyfish:  # jellyfish genome index
-
-genome:     # genome fasta file
-
-annot:
-  version:  # genome annotation version (ex: GRCh37)
-  release:  # genome annotation release (ex: 42)
-
-reindeer:
-  index:  # Reindeer index directory name
-  server: # Reindeer server name
-  options: # additionnal options
-
-genes:		# list of interrest genes
-  - APC
-  - ARID1A
-  - ATM
-  - ATRX
-```
-
-## 4. Fusion transcripts
-
-For now, the fusion transcript/chimera part is computed with a bash script : 
+The fusion/chimera analysis is computed with a bash script as follows. 
 
 - ``depmap_fusion_to_bed.sh``: main script to generate chimera probes, specific 31-mers from the input CCLE fusion annotation file [https://depmap.org/portal/download/all/?releasename=DepMap+Public+22Q2&filename=CCLE_fusions.csv](https://depmap.org/portal/download/all/?releasename=DepMap+Public+22Q2&filename=CCLE_fusions.csv) and count matrix by fusion events in all the samples from a reindeer index 
 - ``config.sh``: script to declare annotation files
@@ -155,7 +100,7 @@ For now, the fusion transcript/chimera part is computed with a bash script :
 	-  ``server ``= put the name of the server where the index is loaded
 	-  ``index ``= name of the reindeer index
 	
-Once you configured your variables you can use the ``depmap_fusion_to_bed.sh`` as follow :
+Once variables are configured, use the ``depmap_fusion_to_bed.sh`` as follow :
 
 ``depmap_fusion_to_bed.sh -a annotfile -c cclefile [-t threshold]``
 
