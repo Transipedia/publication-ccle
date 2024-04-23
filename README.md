@@ -51,7 +51,7 @@ We recommand taking a look at the README.md of rdeer-service to learn how to loa
 
 ## 2. Quantification analysis
 
-The quantification folder holds multiple scripts evaluating Reindeer's quantification of gene expression or transposable elements. Please refer to the README.md in `quantification/` folder for more detailed information.
+The quantification folder holds scripts for evaluating Reindeer's quantification of gene expression. See `quantification/README` for more detail.
 
 ## 3. Mutation analysis
  
