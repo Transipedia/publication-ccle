@@ -70,3 +70,26 @@ genes:		# list of interrest genes
   - ATM
   - ATRX
 ```
+### create the DAG
+
+Create the pipeline's DAG to visualize process steps
+
+```
+snakemake --rulegraph | dot -Tsvg > dag.svg
+```
+
+### try a blank test
+
+Simulating the pipeline launch allows you to check which rules will be executed and how often (and sometimes raise syntax errors)
+ 
+ ```
+ snakemake -n 
+ ```
+
+### run the pipeline
+
+Finally, the pipeline will be started by
+
+```
+snakemake -j 12
+```
