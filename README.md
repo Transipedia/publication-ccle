@@ -42,7 +42,7 @@ pip install -r requirements.txt
 
 The R script needs the library ``Biostring``, see documentation at [https://bioconductor.org/packages/release/bioc/html/Biostrings.html](https://bioconductor.org/packages/release/bioc/html/Biostrings.html)
 
-## Load the CCLE index
+### Loading the CCLE index in memory
 
 Rdeer-service loads the index in memory and enables running multiple queries against the index in real time. Rdeer-service embeds a special version of Reindeer capable of running in socket mode.
  
