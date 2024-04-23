@@ -4,9 +4,7 @@ This folder contains scripts to evaluate `REINDEER` quantification of arbitrary 
 
 Each folder has a `run.sh` script indicating analysis workflow.
 
-## 1. Accuracy of RNA expression measure
-
-### 1.1. `SEQC-validation/`: contrast to qRT-PCR measurement
+## 1. `SEQC-validation/`: contrast to qRT-PCR measurement
 
 The folder `SEQC-validation/` contains scripts comparing gene expression measured from REINDEER query vs qRT-PCR measurement. Two scripts are enclused:
 
@@ -14,7 +12,7 @@ The folder `SEQC-validation/` contains scripts comparing gene expression measure
 
 These scripts reproduces Fig2 and FigS2 of the article.
 
-### 1.2. `Kallisto-validation/`: contrast to `Kallisto-tximport` estimation
+## 2. `Kallisto-validation/`: contrast to `Kallisto-tximport` estimation
 
 The folder `Kallisto-validation/` contains scripts comparing gene expression measured from REINDEER query vs Kallisto-tximport quantification. Three scripts are enclused:
 
@@ -23,7 +21,7 @@ The folder `Kallisto-validation/` contains scripts comparing gene expression mea
 
 These scripts reproduces Fig2 and FigS2 of the article.
 
-### 1.3. `slope_fitting/`: effect of read to k-mer conversion
+## 3. `slope_fitting/`: effect of read to k-mer conversion
 
 The folder `slope_fitting/` encloses two scripts to investigate effect of conversion from sequence reads to k-mers, contrasting REINDEER estimation of gene expression to the `Kallisto-tximport` estimation of gene raw counts.
 
@@ -31,9 +29,3 @@ The folder `slope_fitting/` encloses two scripts to investigate effect of conver
 - `b_summarised_fitting.R` summarizes all cases into a single scatter plot.
 
 These scripts reproduces FigS9 of the article.
-
-## 2. Query of transposable elements
-
-The folder `HERV-validation/` includes two scripts `b1_cmp1000ERV.R` and `b2_cmp2REdiscoverTE.R` to compare `REINDEER`'s quantification of transcposable elements to either `Telescope` or `REdiscoverTE`, respectively.
-
-These scripts reproduces Fig4 A-B, FigS6 and FigS7 of the article.
