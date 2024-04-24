@@ -40,7 +40,7 @@ pip install -r requirements.txt
 
 ### R environment
 
-The R script needs the library ``Biostring``, see documentation at [https://bioconductor.org/packages/release/bioc/html/Biostrings.html](https://bioconductor.org/packages/release/bioc/html/Biostrings.html)
+The R script complexity.R needs the library ``Biostring``, see documentation at [https://bioconductor.org/packages/release/bioc/html/Biostrings.html](https://bioconductor.org/packages/release/bioc/html/Biostrings.html)
 
 ### Loading the CCLE index in memory
 
