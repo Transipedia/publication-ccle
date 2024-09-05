@@ -15,18 +15,18 @@ __usage="
 
  DESCRIPTION
     This is a script to create bed files from
-    the depmap fusion file and generate associated 
-    count tables. 
+    the depmap fusion file and generate associated
+    count tables.
 
  OPTIONS
-    -a [file]		   	Give SRR annotation file
-    -c [file]   		Give CCLE fusion input file
+    -a [file]           Give SRR annotation file
+    -c [file]           Give CCLE fusion input file
     -t [INT]            Threshold (default is > 0)
-    -h, --help      	Print this help
-    -v, --version       Print script information 
+    -h, --help          Print this help
+    -v, --version       Print script information
 
  EXAMPLES
-    ${SCRIPT_NAME} -a annot.csv -c CCLE_fusion.csv 
+    ${SCRIPT_NAME} -a annot.csv -c CCLE_fusion.csv
 "
 
 #================================================================
@@ -51,8 +51,8 @@ while getopts "h?va:c:t:" opt; do
         exit 0
         ;;
     v)  vers=$VERSION
-		echo "$SCRIPT_NAME : version $VERSION"
-		exit 0
+        echo "$SCRIPT_NAME : version $VERSION"
+        exit 0
         ;;
     a)  annot=${OPTARG}
         ;;
@@ -78,7 +78,7 @@ fi
 
 source config.sh
 
-# All our variables 
+# All our variables
 
 echo -e "\nCCLE fusion file : "$ccle
 echo -e "\nAnnotation file : "$annot
@@ -116,7 +116,7 @@ get_fusions_seq () {
     right=$2
     length=$((left+right))
     cut -f1 tmp | awk -v left=$left 'BEGIN {FS=":";OFS="\t"}{if ($3=="+") print $1,$2-left,$2,$1":"$2":"$3,"0",$3; else print $1,$2-1,$2+left-1,$1":"$2":"$3,"0",$3}' > $out"_left-part-"$left"-bases_"$threshold".bed"
-	cut -f2 tmp | awk  -v right=$right 'BEGIN {FS=":";OFS="\t"}{if ($3=="+") print $1,$2-1,$2+right-1,$1":"$2":"$3,"0",$3; else print $1,$2-right,$2,$1":"$2":"$3,"0",$3}' > $out"_right-part-"$right"-bases_"$threshold".bed"
+    cut -f2 tmp | awk  -v right=$right 'BEGIN {FS=":";OFS="\t"}{if ($3=="+") print $1,$2-1,$2+right-1,$1":"$2":"$3,"0",$3; else print $1,$2-right,$2,$1":"$2":"$3,"0",$3}' > $out"_right-part-"$right"-bases_"$threshold".bed"
     rm tmp
     paste -d "" <(bedtools getfasta -fi $genome -bed $out"_left-part-"$left"-bases_"$threshold".bed" -name -s) <(bedtools getfasta -fi $genome -bed $out"_right-part-"$right"-bases_"$threshold".bed" -name -s) | sed 's/\(>.*\)::.*>\(.*\)::.*/\1_\2/g' > $out"_filter_uniq-names-and-coord_"$length"_"$threshold".fa"
 }
@@ -149,7 +149,7 @@ rm $out"_filter_edges_"$length"_"$threshold"_kmerator.fa"
 
 echo -e "\n STEP 5' : remove low complexity kmers"
 Rscript ../bin/complexity.R $out"_filter_edges_"$length"_"$threshold"_kmerator_spe.fa" $out"_filter_edges_"$length"_"$threshold"_kmerator_spe_complex.tsv"  $out"_filter_edges_"$length"_"$threshold"_kmerator_spe_complex.fa"
-if [ ! $(awk 'BEGIN{RS=">"}{print $1"\t"$2;}' $out"_filter_edges_"$length"_"$threshold"_kmerator_spe_complex.fa" | sed '1d' |  grep -v '\-.*AAAAAA\|\-.*TTTTTT\|\-.*GGGGGG\|\-.*CCCCCC' | awk -F'\t' -v OFS='\n' '{$1 = ">" $1} 1' | wc -l ) -eq 0 ] ; then awk 'BEGIN{RS=">"}{print $1"\t"$2;}' $out"_filter_edges_"$length"_"$threshold"_kmerator_spe_complex.fa" | sed '1d' | grep -v '\-.*AAAAAA\|\-.*TTTTTT\|\-.*GGGGGG\|\-.*CCCCCC' | awk -F'\t' -v OFS='\n' '{$1 = ">" $1} 1' > $out"_filter_edges_"$length"_"$threshold"_kmerator_spe_comp.fa" ; else touch $out"_filter_edges_"$length"_"$threshold"_kmerator_spe_comp.fa" ; fi ;
+if [ ! $(awk -F'\n' 'BEGIN{RS=">"}{print $1"\t"$2;}' $out"_filter_edges_"$length"_"$threshold"_kmerator_spe_complex.fa" | sed '1d' |  grep -v '\-.*AAAAAA\|\-.*TTTTTT\|\-.*GGGGGG\|\-.*CCCCCC' | awk -F'\t' -v OFS='\n' '{$1 = ">" $1} 1' | wc -l ) -eq 0 ] ; then awk -F'\n' 'BEGIN{RS=">"}{print $1"\t"$2;}' $out"_filter_edges_"$length"_"$threshold"_kmerator_spe_complex.fa" | sed '1d' | grep -v '\-.*AAAAAA\|\-.*TTTTTT\|\-.*GGGGGG\|\-.*CCCCCC' | awk -F'\t' -v OFS='\n' '{$1 = ">" $1} 1' > $out"_filter_edges_"$length"_"$threshold"_kmerator_spe_comp.fa" ; else touch $out"_filter_edges_"$length"_"$threshold"_kmerator_spe_comp.fa" ; fi ;
 
 
 # STEP 6 : reindeer query on the index
@@ -158,6 +158,6 @@ echo -e "\n STEP 6 : get reindeer counts for all fusion k-mers"
 rdeer-client query -s $server $index -q $out"_filter_edges_"$length"_"$threshold"_kmerator_spe_comp.fa" -o $out"_filter_edges_"$length"_"$threshold"_kmerator_spe_comp_on_"$index".tsv"
 
 
-# STEP 7 : 
+# STEP 7 :
 echo -e "\n STEP 7 : merge k-mer counts by probe and filter low coverage probes"
 ../bin/merge-kmer.py $out"_filter_edges_"$length"_"$threshold"_kmerator_spe_comp_on_"$index".tsv" -o $out"_filter_edges_"$length"_"$threshold"_kmerator_spe_comp_on_"$index"_merge_min-"$min_pos_count".tsv" -m $min_pos_count
