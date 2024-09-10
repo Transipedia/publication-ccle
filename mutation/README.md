@@ -1,6 +1,7 @@
-## This Snakemake pipeline performs mutation analysis in manuscript "Exploring a large cancer cell line RNA-sequencing dataset with k-mers".
+## Mutation analysis
+This Snakemake pipeline performs mutation analysis in manuscript "Exploring a large cancer cell line RNA-sequencing dataset with k-mers".
 
-_NB: Reindeer queries are performed using Reindeer service (https://github.com/Bio2M/rdeer-service) running Reindeer 1.02. 
+NB: Reindeer queries are performed using Reindeer service (https://github.com/Bio2M/rdeer-service) running Reindeer 1.02. 
 This allows multiple queries running in real time on a memory resident index. To run this pipeline on a local Reindeer index, merge all queries into a single query file, and run reindeer query once, to avoid incurring multiple index loads).  
 
 ### Main Steps:

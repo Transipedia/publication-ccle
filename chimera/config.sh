@@ -11,3 +11,6 @@ prime5="./gencode/gencode.v42.annotation_exons-5prime.bed" #bedfile of the 5' en
 ## rdeer configuration
 server="ella"
 index="CCLE-1019-cut-disk"
+
+## other parameters
+min_pos_count=3

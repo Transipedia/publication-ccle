@@ -223,8 +223,8 @@ rule complexity:
          else touch {params.complex_fa} {params.complex_tab};
         fi ;
 
-        if [ ! $(awk 'BEGIN{{RS=">"}}{{print $1"\\t"$2;}}' {params.complex_fa} | sed '1d' |  grep -v '\-.*AAAAAA\|\-.*TTTTTT\|\-.*GGGGGG\|\-.*CCCCCC' | awk -F'\\t' -v OFS='\\n' '{{$1 = ">" $1}} 1' | wc -l ) -eq 0 ] ; then
-         awk 'BEGIN{{RS=">"}}{{print $1"\\t"$2;}}' {params.complex_fa} | sed '1d' |
+        if [ ! $(awk -F'\\n' 'BEGIN{{RS=">"}}{{print $1"\\t"$2;}}' {params.complex_fa} | sed '1d' |  grep -v '\-.*AAAAAA\|\-.*TTTTTT\|\-.*GGGGGG\|\-.*CCCCCC' | awk -F'\\t' -v OFS='\\n' '{{$1 = ">" $1}} 1' | wc -l ) -eq 0 ] ; then
+         awk -F'\\n' 'BEGIN{{RS=">"}}{{print $1"\\t"$2;}}' {params.complex_fa} | sed '1d' |
          grep -v '\-.*AAAAAA\|\-.*TTTTTT\|\-.*GGGGGG\|\-.*CCCCCC' | awk -F'\\t' -v OFS='\\n' '{{$1 = ">" $1}} 1' > {output} ;
          else touch {output} ;
          fi ;
