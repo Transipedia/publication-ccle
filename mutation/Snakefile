@@ -214,20 +214,18 @@ rule complexity:
         os.path.join(complexity_dir, "{categ}", basename_file) + "_{gene}.fa"
     params:
         bin = os.path.join(config['bin_dir'], 'complexity.R'),
-        complex_tab = os.path.join(complexity_dir, "{categ}", basename_file) + "_{gene}-complex-tab.tsv",
-        complex_fa = os.path.join(complexity_dir, "{categ}", basename_file) + "_{gene}-complex.fa"
+        R_out = os.path.join(complexity_dir, "{categ}", basename_file) + "_{gene}-R_out.tsv",
+        R_in = os.path.join(complexity_dir, "{categ}", basename_file) + "_{gene}-R_in.tsv"
     shell:
         """
         if [ -s {input} ] ; then
-         Rscript {params.bin} {input} {params.complex_tab} {params.complex_fa} ;
-         else touch {params.complex_fa} {params.complex_tab};
+          Rscript {params.bin} {input} {params.R_out} {params.R_in} ;
+          else touch {params.R_in} {params.R_out};
         fi ;
 
-        if [ ! $(awk -F'\\n' 'BEGIN{{RS=">"}}{{print $1"\\t"$2;}}' {params.complex_fa} | sed '1d' |  grep -v '\-.*AAAAAA\|\-.*TTTTTT\|\-.*GGGGGG\|\-.*CCCCCC' | awk -F'\\t' -v OFS='\\n' '{{$1 = ">" $1}} 1' | wc -l ) -eq 0 ] ; then
-         awk -F'\\n' 'BEGIN{{RS=">"}}{{print $1"\\t"$2;}}' {params.complex_fa} | sed '1d' |
-         grep -v '\-.*AAAAAA\|\-.*TTTTTT\|\-.*GGGGGG\|\-.*CCCCCC' | awk -F'\\t' -v OFS='\\n' '{{$1 = ">" $1}} 1' > {output} ;
-         else touch {output} ;
-         fi ;
+        set +e ;
+        egrep -v "AAAAAA|TTTTTT|CCCCCC|GGGGGG" {params.R_out} | awk -F'\\t' '{{print ">" $1 "\\n" $2}}' > {output} ;
+        set -e ;
         """
 
 

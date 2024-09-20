@@ -1,5 +1,6 @@
 results/
 oldanalysis/
+dev/
 
 # Snakemake
 .snakemake/

@@ -5,25 +5,25 @@ thread: 12
 ################## SNAKEFILE PARAMETERS #####################
 
 bin_dir: ../bin/          # script location
-output_dir: v1 # output-v18-with-AF-without-filter        # relative to base_dir
-version:    v18-af    # v7 or v7-af
+output_dir: v1            # relative to base_dir
+version:    v1-af         # example: v1 or v1-af
 
 #################### RULES PARAMETERS #######################
 
 depmap:
-  filter_af: "$30 != \"\"" # (column 30: RNAseq_AC)
+  filter_af: "$30 != \"\"" # (col 30: RNAseq_AC) Empty or None if you don't want AF filter
   isCOSMIChotspot: False
 
 complexity:
   enabled:   True  # if True, complexity is applied
 
+merge_kmer:
+  min_hits: 3       # Minimum number of positive counts
+
 filter:
   enabled:   True  # if True, filter is applied
   recur-max: 100%  # absolute or percentage (ex: 100 or 70%)
   abund-min: 6     # noise level
-
-merge_kmer:
-  min_hits: 3       # Minimum number of positive counts
 
 ################# OTHER SNAKEFILE PARAMETERS ####################
 
@@ -63,8 +63,8 @@ genes:
   - IDH1         # src: Myeloid
   - KRAS         # src: Publi
   - MAP3K1
-  #~ - MLL2
-  #~ - MLL3
+  # - MLL2
+  # - MLL3
   - MTOR
   - NAV3
   - NCOR1

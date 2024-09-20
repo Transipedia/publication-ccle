@@ -1,6 +1,6 @@
 kmerator
 snakemake
-rdeer-service
+rdeer-service==1.4.2
 PyYAML
 pyfaidx
 scipy

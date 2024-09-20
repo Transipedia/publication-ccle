@@ -135,7 +135,7 @@ grep -A1 -f <(bedtools intersect -a <(awk 'BEGIN {FS=OFS="\t"}{print $7,$8,$9,$1
 grep -A1 -f <(bedtools intersect -a <(awk 'BEGIN {FS=OFS="\t"}{print $7,$8,$9,$10,$11,$12,$4}' <(bedtools intersect -a <(paste $out"_left-part-"$left"-bases_"$threshold".bed" $out"_right-part-"$right"-bases_"$threshold".bed") -b $prime3 -s -wa -u)) -b $prime5 -s -wa -u | awk 'BEGIN {FS=OFS="\t"}{print $7,$4}' | sed 's/\t/_/g' | cut -d'_' -f1,2,4 ) $out"_filter_left-and-right-part-in-exon_"$length"_"$threshold".fa" --no-group-separator > $out"_filter_edges_"$length"_"$threshold".fa"
 
 
-# STEP 5 : filtering first with kmerator to keep only specific kmers (masking step) and second with low complexity filter
+# STEP 5 : filtering first with kmerator to keep only specific kmers (masking step)
 echo -e "\n STEP 5 : kmerator"
 if [ -e "kmerator_"$threshold"_"$length"_edges/kmers.fa" ]
 then
@@ -147,17 +147,27 @@ sed 's/\.kmer[0-9]*//g' "kmerator_"$threshold"_"$length"_edges/kmers.fa" > $out"
 grep -f <(grep -v ">" $out"_filter_edges_"$length"_"$threshold"_kmerator.fa" | sort | uniq -c | awk '{print $2"\t"$1}' | awk '$2==1' | cut -f1) -B1 $out"_filter_edges_"$length"_"$threshold"_kmerator.fa" --no-group-separator > $out"_filter_edges_"$length"_"$threshold"_kmerator_spe.fa"
 rm $out"_filter_edges_"$length"_"$threshold"_kmerator.fa"
 
-echo -e "\n STEP 5' : remove low complexity kmers"
-Rscript ../bin/complexity.R $out"_filter_edges_"$length"_"$threshold"_kmerator_spe.fa" $out"_filter_edges_"$length"_"$threshold"_kmerator_spe_complex.tsv"  $out"_filter_edges_"$length"_"$threshold"_kmerator_spe_complex.fa"
-if [ ! $(awk -F'\n' 'BEGIN{RS=">"}{print $1"\t"$2;}' $out"_filter_edges_"$length"_"$threshold"_kmerator_spe_complex.fa" | sed '1d' |  grep -v '\-.*AAAAAA\|\-.*TTTTTT\|\-.*GGGGGG\|\-.*CCCCCC' | awk -F'\t' -v OFS='\n' '{$1 = ">" $1} 1' | wc -l ) -eq 0 ] ; then awk -F'\n' 'BEGIN{RS=">"}{print $1"\t"$2;}' $out"_filter_edges_"$length"_"$threshold"_kmerator_spe_complex.fa" | sed '1d' | grep -v '\-.*AAAAAA\|\-.*TTTTTT\|\-.*GGGGGG\|\-.*CCCCCC' | awk -F'\t' -v OFS='\n' '{$1 = ">" $1} 1' > $out"_filter_edges_"$length"_"$threshold"_kmerator_spe_comp.fa" ; else touch $out"_filter_edges_"$length"_"$threshold"_kmerator_spe_comp.fa" ; fi ;
+
+# STEP 6 : remove low complexity kmers
+echo -e "\n STEP 6' : remove low complexity kmers"
+Rscript ../bin/complexity.R \
+    $out"_filter_edges_"$length"_"$threshold"_kmerator_spe.fa" \
+    $out"_filter_edges_"$length"_"$threshold"_kmerator_spe_complex_out.tsv"  \
+    $out"_filter_edges_"$length"_"$threshold"_kmerator_spe_complex_in.tsv"
+egrep -v "AAAAAA|TTTTTT|CCCCCC|GGGGGG" $out"_filter_edges_"$length"_"$threshold"_kmerator_spe_complex_out.tsv" | \
+    awk -F'\t' '{print ">" $1 "\n" $2}' > $out"_filter_edges_"$length"_"$threshold"_kmerator_spe_comp.fa"
 
 
-# STEP 6 : reindeer query on the index
-echo -e "\n STEP 6 : get reindeer counts for all fusion k-mers"
+# STEP 7 : reindeer query on the index
+echo -e "\n STEP 7 : get reindeer counts for all fusion k-mers"
 
-rdeer-client query -s $server $index -q $out"_filter_edges_"$length"_"$threshold"_kmerator_spe_comp.fa" -o $out"_filter_edges_"$length"_"$threshold"_kmerator_spe_comp_on_"$index".tsv"
+rdeer-client query \
+    -s $server \
+    $index \
+    -q $out"_filter_edges_"$length"_"$threshold"_kmerator_spe_comp.fa" \
+    -o $out"_filter_edges_"$length"_"$threshold"_kmerator_spe_comp_on_"$index".tsv"
 
 
-# STEP 7 :
+# STEP 8 :
 echo -e "\n STEP 7 : merge k-mer counts by probe and filter low coverage probes"
 ../bin/merge-kmer.py $out"_filter_edges_"$length"_"$threshold"_kmerator_spe_comp_on_"$index".tsv" -o $out"_filter_edges_"$length"_"$threshold"_kmerator_spe_comp_on_"$index"_merge_min-"$min_pos_count".tsv" -m $min_pos_count
